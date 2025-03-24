@@ -56,7 +56,7 @@ def calculate_total_alternate_contributions_monthly(years_to_switch, monthly_con
 class InvestmentCalculatorApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Investment Calculator with Alternate Contributions")
+        self.root.title("Compound Interest Visualizer")
         self.root.geometry("900x650")
         
         # Create notebook (tabs)
@@ -75,6 +75,7 @@ class InvestmentCalculatorApp:
         self.initial_investment_var = tk.DoubleVar(value=10000)
         self.interest_rate_var = tk.DoubleVar(value=6.0)
         self.total_years_var = tk.IntVar(value=30)
+        self.minimum_4percent_rule_income_var = tk.DoubleVar(value=60000)
         
         # List to store contribution change entries
         self.contribution_entries = []
@@ -99,6 +100,10 @@ class InvestmentCalculatorApp:
         # Total years
         ttk.Label(basic_frame, text="Total Years").grid(row=2, column=0, padx=5, pady=5, sticky="w")
         ttk.Entry(basic_frame, textvariable=self.total_years_var, width=15).grid(row=2, column=1, padx=5, pady=5)
+
+        # Minimum 4% Rule Income to Retire
+        ttk.Label(basic_frame, text="Minimum 4% Income to Retire ($)").grid(row=3, column=0, padx=5, pady=5, sticky="w")
+        ttk.Entry(basic_frame, textvariable=self.minimum_4percent_rule_income_var, width=15).grid(row=3, column=1, padx=5, pady=5)
         
         # Contribution changes frame
         self.changes_frame = ttk.LabelFrame(self.main_frame, text="Contribution Changes")
@@ -314,6 +319,7 @@ class InvestmentCalculatorApp:
         initial_investment = self.initial_investment_var.get()
         interest_rate = self.interest_rate_var.get()
         total_years = self.total_years_var.get()
+        minimum_4percent_rule_income = self.minimum_4percent_rule_income_var.get()
         
         # Get contribution changes
         years_to_switch = []
@@ -344,9 +350,13 @@ class InvestmentCalculatorApp:
         for widget in self.scrollable_frame3.winfo_children():
             widget.destroy()
         
+        # Create a style that will be applied to the labels when the minimum 4% rule income is met
+        style = ttk.Style()
+        style.configure("Met4PercentRule.TLabel", background="lightgreen")
+
         # Fill in the middle scrollable frame with the normal results
         # Create headers
-        headers = ["Year", "Balance"]
+        headers = ["Year", "Balance", "4% Rule Initial Yearly Amount"]
         for i, header in enumerate(headers):
             ttk.Label(self.scrollable_frame2, text=header, font=('Helvetica', 10, 'bold')).grid(
                 row=0, column=i, padx=5, pady=5, sticky="w"
@@ -354,12 +364,23 @@ class InvestmentCalculatorApp:
         
         # Fill in results
         for i, total in enumerate(yearly_totals):
-            ttk.Label(self.scrollable_frame2, text=str(i)).grid(
+            if (total * 0.04) >= minimum_4percent_rule_income:
+                # If it meets the required income, highlight the year in green
+                styleStr = "Met4PercentRule.TLabel"
+            else:
+                # Set the style to nothing
+                styleStr = ""
+            
+            ttk.Label(self.scrollable_frame2, text=str(i), style=styleStr).grid(
                 row=i+1, column=0, padx=5, pady=2, sticky="w"
             )
             ttk.Label(self.scrollable_frame2, text=f"${total:,.2f}").grid(
                 row=i+1, column=1, padx=5, pady=2, sticky="w"
             )
+            ttk.Label(self.scrollable_frame2, text=f"${(total * 0.04):,.2f}").grid(
+                row=i+1, column=2, padx=5, pady=2, sticky="e"
+            )
+
         
         # Prepare to plot the results
         self.plot.clear()
@@ -383,11 +404,21 @@ class InvestmentCalculatorApp:
         
         # Fill in results
         for i, total in enumerate(yearly_totalsPlus1):
-            ttk.Label(self.scrollable_frame3, text=str(i)).grid(
+            if (total * 0.04) >= minimum_4percent_rule_income:
+                # If it meets the required income, highlight the year in green
+                styleStr = "Met4PercentRule.TLabel"
+            else:
+                # Set the style to nothing
+                styleStr = ""
+        
+            ttk.Label(self.scrollable_frame3, text=str(i), style=styleStr).grid(
                 row=i+1, column=0, padx=5, pady=2, sticky="w"
             )
             ttk.Label(self.scrollable_frame3, text=f"${total:,.2f}").grid(
                 row=i+1, column=1, padx=5, pady=2, sticky="w"
+            )
+            ttk.Label(self.scrollable_frame3, text=f"${(total * 0.04):,.2f}").grid(
+                row=i+1, column=2, padx=5, pady=2, sticky="e"
             )
 
         # Update the plot for the real intest rate
@@ -408,14 +439,24 @@ class InvestmentCalculatorApp:
             ttk.Label(self.scrollable_frame1, text=header, font=('Helvetica', 10, 'bold')).grid(
                 row=0, column=i, padx=5, pady=5, sticky="w"
             )
-        
+    
         # Fill in results
         for i, total in enumerate(yearly_totalsMinus1):
-            ttk.Label(self.scrollable_frame1, text=str(i)).grid(
+            if (total * 0.04) >= minimum_4percent_rule_income:
+                # If it meets the required income, highlight the year in green
+                styleStr = "Met4PercentRule.TLabel"
+            else:
+                # Set the style to nothing
+                styleStr = ""
+
+            ttk.Label(self.scrollable_frame1, text=str(i), style=styleStr).grid(
                 row=i+1, column=0, padx=5, pady=2, sticky="w"
             )
             ttk.Label(self.scrollable_frame1, text=f"${total:,.2f}").grid(
                 row=i+1, column=1, padx=5, pady=2, sticky="w"
+            )
+            ttk.Label(self.scrollable_frame1, text=f"${(total * 0.04):,.2f}").grid(
+                row=i+1, column=2, padx=5, pady=2, sticky="e"
             )
 
         # Plot the amounts contributed at each year
